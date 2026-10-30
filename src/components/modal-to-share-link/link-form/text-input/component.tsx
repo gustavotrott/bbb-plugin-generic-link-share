@@ -44,6 +44,13 @@ export function TextInputComponent(props: TextInputComponentProps) {
     setUrlToPreview,
   } = props;
 
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Opening the modal with no link yet: put the cursor in the field, ready to paste
+  React.useEffect(() => {
+    if (!isViewer && !url) inputRef.current?.focus();
+  }, []);
+
   let label: string;
   if (isViewer) {
     label = intl.formatMessage(intlMessages.viewerUrlLabel);
@@ -80,6 +87,7 @@ export function TextInputComponent(props: TextInputComponentProps) {
       <div style={styleOfPreviewButtonWrapper}>
         <Styled.LabelFormTextInput
           id={inputId}
+          ref={inputRef}
           value={url}
           type="text"
           name={inputName}
