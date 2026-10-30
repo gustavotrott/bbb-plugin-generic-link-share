@@ -6,10 +6,11 @@ interface GenericComponentLinkShareProps {
   link: string;
   // Only given to the presenter, who may stop sharing from the content itself
   onClose?: () => void;
+  closeLabel?: string;
 }
 
 function GenericComponentLinkShare(props: GenericComponentLinkShareProps): React.ReactElement {
-  const { link, onClose } = props;
+  const { link, onClose, closeLabel } = props;
 
   return (
     <div style={{
@@ -30,8 +31,8 @@ function GenericComponentLinkShare(props: GenericComponentLinkShareProps): React
         <Styled.CloseButton
           type="button"
           onClick={onClose}
-          aria-label="Stop sharing website"
-          title="Stop sharing website"
+          aria-label={closeLabel}
+          title={closeLabel}
           data-test="stopGenericLinkShare"
         >
           <i className="icon-bbb-close" />
@@ -43,6 +44,7 @@ function GenericComponentLinkShare(props: GenericComponentLinkShareProps): React
 
 GenericComponentLinkShare.defaultProps = {
   onClose: undefined,
+  closeLabel: 'Stop sharing website',
 };
 
 export default GenericComponentLinkShare;

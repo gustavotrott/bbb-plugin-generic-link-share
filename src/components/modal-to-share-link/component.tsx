@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import { defineMessages } from 'react-intl';
 
 import * as Styled from './styles';
 
@@ -7,8 +8,32 @@ import { ModalToShareLinkProps } from './types';
 import { REGEX } from '../generic-link-share/constants';
 import { LinkForm } from './link-form/component';
 
+const intlMessages = defineMessages({
+  title: {
+    id: 'genericLinkSharePlugin.modal.title',
+    description: 'Title of the modal to share a link',
+    defaultMessage: 'Share a website',
+  },
+  sharingTitle: {
+    id: 'genericLinkSharePlugin.modal.sharingTitle',
+    description: 'Title of the modal while a website is shared',
+    defaultMessage: 'Shared website',
+  },
+  errorTitle: {
+    id: 'genericLinkSharePlugin.modal.error.title',
+    description: 'Title shown above an error message in the modal',
+    defaultMessage: 'Error:',
+  },
+  clearErrorButtonLabel: {
+    id: 'genericLinkSharePlugin.modal.error.clearButton.label',
+    description: 'Label of the button that dismisses the error message in the modal',
+    defaultMessage: 'clear',
+  },
+});
+
 export function ModalToShareLink(props: ModalToShareLinkProps) {
   const {
+    intl,
     previousModalState,
     setPreviousModalState,
     defaultLink,
@@ -70,7 +95,9 @@ export function ModalToShareLink(props: ModalToShareLinkProps) {
           display: 'flex',
         }}
       >
-        <h1 style={{ margin: '5px 0' }}>{isSharing ? 'Shared website' : 'Share a website'}</h1>
+        <h1 style={{ margin: '5px 0' }}>
+          {intl.formatMessage(isSharing ? intlMessages.sharingTitle : intlMessages.title)}
+        </h1>
         <div
           style={{
             width: '100%',
@@ -83,6 +110,7 @@ export function ModalToShareLink(props: ModalToShareLinkProps) {
         >
           {!linkError ? (
             <LinkForm
+              intl={intl}
               previousModalState={previousModalState}
               setPreviousModalState={setPreviousModalState}
               defaultLink={defaultLink}
@@ -97,11 +125,11 @@ export function ModalToShareLink(props: ModalToShareLinkProps) {
             />
           ) : (
             <div>
-              <h1>Error: </h1>
+              <h1>{intl.formatMessage(intlMessages.errorTitle)}</h1>
               <Styled.ErrorContentBlock>
                 <Styled.ErrorSpan>{linkError}</Styled.ErrorSpan>
                 <Styled.ButtonStyle onClick={() => setLinkError(null)}>
-                  clear
+                  {intl.formatMessage(intlMessages.clearErrorButtonLabel)}
                 </Styled.ButtonStyle>
               </Styled.ErrorContentBlock>
             </div>

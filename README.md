@@ -14,7 +14,7 @@ npm ci
 npm run build-bundle
 ```
 
-The above commands will generate the `dist` folder, containing the bundled JavaScript file named `GenericLinkShare.js`. This file can be hosted on any HTTPS server along with its `manifest.json`.
+The above commands will generate the `dist` folder, containing the bundled JavaScript file named `GenericLinkShare.js` and a `locales` directory with the translation files. These files can be hosted on any HTTPS server along with its `manifest.json`.
 
 If you install the plugin separated from the manifest, remember to change the `javascriptEntrypointUrl` in the `manifest.json` to the correct endpoint.
 
@@ -49,6 +49,15 @@ plugin_GenericLinkShare_default-url-description=Voting page for this meeting
 The suggested URL may use the [URL placeholders](#url-placeholders) below, which are replaced for each participant when the link is shown.
 
 These parameters reach the plugin through the `settingsSchema` of `manifest.json`: `bbb-web` writes each value into the `defaultValue` of the matching setting, with an empty fallback (`${plugin_GenericLinkShare_<param>:}`), so a parameter that is not sent just leaves its setting empty and nothing is suggested. The settings are marked `"required": true` in `settingsSchema` only because that is when BigBlueButton applies a setting's `defaultValue`; this does not make the `/create` parameters required. The values are inserted as-is into the manifest JSON, so they must not contain double quotes (`"`) or backslashes (`\`). The same settings can also be set server-wide in `/etc/bigbluebutton/bbb-html5.yml` (`defaultUrl`, `defaultViewerUrl` and `defaultUrlDescription` under the `GenericLinkShare` plugin), which take precedence over the `/create` parameters.
+
+## Localization
+
+The plugin strings are translated with [react-intl](https://formatjs.github.io/docs/react-intl/), following the same approach as [bbb-plugin-pick-random-user](https://github.com/bigbluebutton/bbb-plugin-pick-random-user). Translation files live in `public/locales/` and are loaded at runtime from the `localesBaseUrl` set in `manifest.json` (relative to the manifest location). If a string is missing for the user's locale, the English one (`en.json`) is used.
+
+To add a new language:
+
+1. Copy `public/locales/en.json` to `public/locales/<locale>.json` (e.g. `es.json` or `pt-BR.json`) and translate its values.
+2. Add the new file name to `public/locales/index.json`.
 
 ## URL Placeholders
 

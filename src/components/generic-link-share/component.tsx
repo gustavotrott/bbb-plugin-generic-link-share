@@ -15,7 +15,9 @@ import {
   pluginLogger,
   PresentationToolbarButton,
 } from 'bigbluebutton-html-plugin-sdk';
+import { defineMessages } from 'react-intl';
 import { parseTags } from '../utils';
+import { useGetInternationalization } from '../../commons/hooks';
 
 import GenericComponentLinkShare from '../generic-component/component';
 
@@ -34,6 +36,49 @@ import {
   replaceUrlPlaceholders,
 } from './utils';
 import { USER_METADATA } from './subscription';
+
+const intlMessages = defineMessages({
+  presentationToolbarButtonLabel: {
+    id: 'genericLinkSharePlugin.presentationToolbar.playButton.label',
+    description: 'Label of the presentation toolbar button that shares a link tag found in the slide',
+    defaultMessage: 'Play {title}',
+  },
+  presentationToolbarButtonTooltip: {
+    id: 'genericLinkSharePlugin.presentationToolbar.playButton.tooltip',
+    description: 'Tooltip of the presentation toolbar button that shares a link tag found in the slide',
+    defaultMessage: 'A generic link tag has been detected in this slide, show it to all?',
+  },
+  shareWebsiteLabel: {
+    id: 'genericLinkSharePlugin.mediaArea.shareWebsite.label',
+    description: 'Label of the media area option when no website is shared (two short lines at most)',
+    defaultMessage: 'Share website',
+  },
+  shareWebsiteTooltip: {
+    id: 'genericLinkSharePlugin.mediaArea.shareWebsite.tooltip',
+    description: 'Tooltip of the media area option when no website is shared',
+    defaultMessage: 'Share a website into the presentation area',
+  },
+  sharingWebsiteLabel: {
+    id: 'genericLinkSharePlugin.mediaArea.sharingWebsite.label',
+    description: 'Label of the media area option while a website is shared (two short lines at most)',
+    defaultMessage: 'Sharing website',
+  },
+  sharingWebsiteTooltip: {
+    id: 'genericLinkSharePlugin.mediaArea.sharingWebsite.tooltip',
+    description: 'Tooltip of the media area option while a website is shared',
+    defaultMessage: 'Change or stop sharing the website',
+  },
+  closeButtonLabel: {
+    id: 'genericLinkSharePlugin.content.closeButton.label',
+    description: 'Label of the close button shown to the presenter over the shared website',
+    defaultMessage: 'Stop sharing website',
+  },
+  malformedLinkError: {
+    id: 'genericLinkSharePlugin.modal.error.malformedLink',
+    description: 'Error shown when the link typed in the modal is not a valid URL',
+    defaultMessage: 'Link is malformed, please insert a valid one',
+  },
+});
 
 // How many times the link may be put back on top of the same older content,
 // so two contents fighting for the presentation area can never loop.
@@ -77,6 +122,7 @@ function GenericLinkShare(
 ): React.ReactElement {
   BbbPluginSdk.initialize(uuid);
   const pluginApi: PluginApi = BbbPluginSdk.getPluginApi(uuid);
+  const { intl } = useGetInternationalization(pluginApi);
   const { data: userData, loading: userDataLoading } = pluginApi
     .useCustomQuery<UserMetadataGraphqlResponse>(USER_METADATA);
   const { data: currentUser } = pluginApi.useCurrentUser();
@@ -116,6 +162,8 @@ function GenericLinkShare(
   const contentRootRef = useRef<ReactDOM.Root>(null);
   const isPresenterRef = useRef<boolean>(false);
   isPresenterRef.current = !!currentUser?.presenter;
+  const closeLabelRef = useRef<string>(intlMessages.closeButtonLabel.defaultMessage as string);
+  if (intl) closeLabelRef.current = intl.formatMessage(intlMessages.closeButtonLabel);
   // Start times of the other contents of the presentation area, from the meeting
   // the client already subscribes to (no subscription of our own)
   const { data: contentTimes } = pluginApi.useMeetingData(
@@ -156,6 +204,7 @@ function GenericLinkShare(
       <GenericComponentLinkShare
         link={contentLink}
         onClose={isPresenterRef.current ? handleStopSharing : undefined}
+        closeLabel={closeLabelRef.current}
       />,
     );
   };
@@ -176,8 +225,11 @@ function GenericLinkShare(
     if (currentUser?.presenter) {
       const buttons = tags.map((tag) => (
         new PresentationToolbarButton({
-          label: `Play ${tag.title}`,
-          tooltip: 'A generic link tag has been detected in this slide, show it to all?',
+          label: intl.formatMessage(
+            intlMessages.presentationToolbarButtonLabel,
+            { title: tag.title },
+          ),
+          tooltip: intl.formatMessage(intlMessages.presentationToolbarButtonTooltip),
           style: {},
           onClick: () => {
             const tagLink: DataToGenericLink = {
@@ -213,8 +265,8 @@ function GenericLinkShare(
 
   useEffect(() => {
     const { data: currentPresentation } = currentPresentationResponse;
-    if (currentUser?.presenter) handleFetchPresentationData(currentPresentation);
-  }, [currentPresentationResponse, currentUser]);
+    if (intl && currentUser?.presenter) handleFetchPresentationData(currentPresentation);
+  }, [currentPresentationResponse, currentUser, intl]);
 
   const handleSendLinkToIframe = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -249,7 +301,7 @@ function GenericLinkShare(
       pushEntryUrlToGenericLink(objectToDispatch);
       setShowModal(false);
     } else {
-      setLinkError('Link is malformed, please insert a valid one');
+      setLinkError(intl.formatMessage(intlMessages.malformedLinkError));
     }
   };
 
@@ -304,13 +356,17 @@ function GenericLinkShare(
   // Set extensible areas (depending o the role of the user). A single option: the
   // modal it opens shares, changes and stops the shared website.
   useEffect(() => {
+    if (!intl) return;
     if (currentUser?.presenter) {
       pluginApi.setMediaAreaItems([
         new MediaAreaOption({
-          label: isSharing ? 'Sharing website' : 'Share website',
+          label: intl.formatMessage(isSharing
+            ? intlMessages.sharingWebsiteLabel
+            : intlMessages.shareWebsiteLabel),
           icon: websiteIcon(isSharing),
-          tooltip: isSharing ? 'Change or stop sharing the website'
-            : 'Share a website into the presentation area',
+          tooltip: intl.formatMessage(isSharing
+            ? intlMessages.sharingWebsiteTooltip
+            : intlMessages.shareWebsiteTooltip),
           dataTest: 'genericLinkShareMediaAreaOption',
           allowed: true,
           onClick: () => {
@@ -323,7 +379,7 @@ function GenericLinkShare(
     } else {
       pluginApi.setMediaAreaItems([]);
     }
-  }, [currentUser, isSharing]);
+  }, [currentUser, isSharing, intl]);
 
   // Someone who joins (or reloads the page) while a link is already shared gets the
   // data-channel entry before the current user and the user metadata. Resolving the
@@ -374,7 +430,7 @@ function GenericLinkShare(
       // The client already unmounted that content
       contentRootRef.current = null;
     }
-  }, [currentUser?.presenter]);
+  }, [currentUser?.presenter, intl]);
 
   // The presentation area shows whatever reached this client last. When a client
   // reconnects, the screen share (or external video) remounts and lands on top
@@ -412,9 +468,13 @@ function GenericLinkShare(
     currentLayout, genericContentId, link, linkEntryId, linkSharedAt,
     screenshareStartedAt, externalVideoStartedAt,
   ]);
+
+  if (!intl) return null;
+
   return (
     <ModalToShareLink
       {...{
+        intl,
         setPreviousModalState,
         previousModalState,
         defaultLink,
